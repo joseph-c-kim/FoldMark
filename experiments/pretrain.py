@@ -11,7 +11,8 @@ from pytorch_lightning.loggers.wandb import WandbLogger
 from pytorch_lightning.trainer import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 
-from data.pdb_dataloader import PdbDataModule
+from data.datasets import PdbDataset
+from data.protein_dataloader import ProteinData
 from models.flow_module_pretrain import FlowModule
 from experiments import utils as eu
 import wandb
@@ -19,16 +20,30 @@ import wandb
 log = eu.get_pylogger(__name__)
 torch.set_float32_matmul_precision('high')
 
-
 class Experiment:
 
     def __init__(self, *, cfg: DictConfig):
         self._cfg = cfg
         self._data_cfg = cfg.data
         self._exp_cfg = cfg.experiment
-        self._datamodule: LightningDataModule = PdbDataModule(self._data_cfg)
+        self._setup_dataset()
+        self._datamodule: LightningDataModule = ProteinData(
+            data_cfg=self._data_cfg,
+            train_dataset=self._train_dataset,
+            valid_dataset=self._valid_dataset
+        )
         self._model: LightningModule = FlowModule(self._cfg)
         
+    def _setup_dataset(self):
+        self._train_dataset = PdbDataset(
+            dataset_cfg=self._cfg.pdb_dataset,
+            is_training=True,
+        ) 
+        self._valid_dataset = PdbDataset(
+            dataset_cfg=self._cfg.pdb_dataset,
+            is_training=False,
+        ) 
+    
     def train(self):
         callbacks = []
         if self._exp_cfg.debug:
@@ -53,7 +68,7 @@ class Experiment:
             cfg_path = os.path.join(ckpt_dir, 'config.yaml')
             with open(cfg_path, 'w') as f:
                 OmegaConf.save(config=self._cfg, f=f.name)
-            shutil.copy('./models/flow_module.py', ckpt_dir)
+            shutil.copy('./models/flow_module_pretrain.py', ckpt_dir)
             cfg_dict = OmegaConf.to_container(self._cfg, resolve=True)
             flat_cfg = dict(eu.flatten_dict(cfg_dict))
             if isinstance(logger.experiment.config, wandb.sdk.wandb_config.Config):

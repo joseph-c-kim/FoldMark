@@ -40,13 +40,14 @@ class FlowModule(LightningModule):
         # Set-up vector field prediction model
         self.encoder = Encoder(self._encoder_decoder_cfg)
         self.decoder = Decoder(self._encoder_decoder_cfg)
-        state_dict = torch.load(self._exp_cfg.load_ckpt)['state_dict']
-        new_state_dict = OrderedDict()
-        for k, v in state_dict.items():
-            name = k.replace('encoder.', '', 1) 
-            new_state_dict[name] = v
-        self.encoder.load_state_dict(new_state_dict, strict=False)
-        self.decoder.load_state_dict(new_state_dict, strict=False)
+        if self._exp_cfg.load_ckpt is not None:
+            state_dict = torch.load(self._exp_cfg.load_ckpt)['state_dict']
+            new_state_dict = OrderedDict()
+            for k, v in state_dict.items():
+                name = k.replace('encoder.', '', 1) 
+                new_state_dict[name] = v
+            self.encoder.load_state_dict(new_state_dict, strict=False)
+            self.decoder.load_state_dict(new_state_dict, strict=False)
         self.encoder.requires_grad_(True)
         self.decoder.requires_grad_(True)
 
@@ -224,6 +225,9 @@ class FlowModule(LightningModule):
                 data=self.validation_epoch_samples)
             self.validation_epoch_samples.clear()
         val_epoch_metrics = pd.concat(self.validation_epoch_metrics)
+        val_epoch_metrics = val_epoch_metrics.applymap(
+            lambda x: x.item() if isinstance(x, torch.Tensor) else x
+        )
         for metric_name,metric_val in val_epoch_metrics.mean().to_dict().items():
             self._log_scalar(
                 f'valid/{metric_name}',

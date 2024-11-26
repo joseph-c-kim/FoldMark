@@ -1,14 +1,9 @@
+defaults:
+  - _self_
+  - datasets
+
 data:
-  dataset:
-    seed: 123
-    max_num_res: 256
-    cache_num_res: 0
-    min_num_res: 0
-    subset: null
-    samples_per_eval_length: 5
-    num_eval_lengths: 8
-    min_eval_length: 500
-    csv_path: ../watermark/preprocessed/metadata.csv
+  dataset: pdb
   loader:
     num_workers: 4
     prefetch_factor: 10
@@ -108,7 +103,7 @@ encoder_decoder:
     num_blocks: 6
 
 experiment:
-  debug: true
+  debug: false
   seed: 123
   num_devices: 2
   warm_start: null
@@ -130,10 +125,10 @@ experiment:
     aux_loss_weight: 1.0
     aux_loss_t_pass: 0.25
   wandb:
-    name: Encoder_Extractor
+    name: pdb_pretrain
     project: watermark
     save_code: true
-    tags: []
+    offline: true
   optimizer:
     lr: 0.0001
   trainer:
@@ -152,5 +147,5 @@ experiment:
     save_top_k: 3
     monitor: valid/recovery
     mode: max
-  load_ckpt: /n/holylabs/LABS/mzitnik_lab/Users/zaixizhang/watermark/ckpt/watermark/Encoder_Extractor/2024-09-18_09-10-09/epoch=17-step=32130.ckpt
-  load_ckpt1: /n/holylabs/LABS/mzitnik_lab/Users/zaixizhang/watermark/weights/scope/published.ckpt
+  load_ckpt: null
+  load_ckpt1: null

@@ -14,29 +14,6 @@ from openfold.utils import rigid_utils
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler, dist
-from torch.utils.data.dataloader import default_collate
-
-
-def custom_collate_fn(batch):
-    """
-    自定义的collate_fn，用于处理一批数据。
-    它会检查batch中的数据项，如果是tensor，则沿着新的批次维度堆叠；
-    对于非tensor数据，使用PyTorch的default_collate处理。
-    """
-    
-    # 处理tensor数据：沿着新的批次维度堆叠
-    stacked_tensors = {}
-    for key in batch[0]:
-        if isinstance(batch[0][key], torch.Tensor):
-            try:
-                stacked_tensors[key] = torch.stack([d[key] for d in batch], dim=0)
-            except:
-                print([d[key] for d in batch])
-        else:
-            # 对于非tensor数据，回退到default_collate
-            stacked_tensors[key] = default_collate([d[key] for d in batch])
-    
-    return stacked_tensors
 
 
 class PdbDataModule(LightningDataModule):
@@ -179,7 +156,6 @@ class PdbDataset(Dataset):
         processed_file_path = csv_row['processed_path']
         chain_feats = self._process_csv_row(processed_file_path)
         chain_feats['csv_idx'] = torch.ones(1, dtype=torch.long) * idx
-        #print(chain_feats['aatype'].shape)
         return chain_feats
 
 
